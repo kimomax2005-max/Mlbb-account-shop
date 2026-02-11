@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kimo MLBB Acc Shop</title>
+    <style>
+        :root {
+            --tg-blue: #0088cc;
+            --price-yellow: #ffd700;
+            --bg-dark: #05080a;
+            --card-dark: #12161f;
+            --accent-blue: #00d2ff;
+            --sold-red: #ff3333;
+        }
+
+        body { 
+            font-family: 'Inter', 'Pyidaungsu', 'Segoe UI', sans-serif;
+            margin: 0; padding: 20px 15px; 
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            background: var(--bg-dark);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* --- Lightning Bolt Effect --- */
+        .lightning {
+            position: fixed; top: 0; width: 2px; height: 100%;
+            background: rgba(255, 255, 255, 0);
+            box-shadow: 0 0 20px 2px rgba(0, 210, 255, 0);
+            z-index: 0; pointer-events: none;
+            animation: thunder 2s infinite;
+        }
+
+        @keyframes thunder {
+            0%, 10%, 90%, 100% { background: rgba(255, 255, 255, 0); box-shadow: none; }
+            92% { background: rgba(255, 255, 255, 0.8); box-shadow: 0 0 30px 5px var(--accent-blue); transform: translateX(-20px) skewX(-10deg); }
+            96% { background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 50px 10px #fff; }
+        }
+
+        .container { width: 100%; max-width: 440px; z-index: 2; }
+
+        /* Branding */
+        .brand-header {
+            text-align: center; margin-bottom: 30px;
+        }
+        .brand-name {
+            font-size: 2.2rem; font-weight: 900;
+            background: linear-gradient(to bottom, #fff, var(--accent-blue));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-transform: uppercase; letter-spacing: 2px;
+            filter: drop-shadow(0 0 10px rgba(0, 210, 255, 0.5));
+        }
+
+        /* --- Admin Card (Seller View) --- */
+        .admin-box { 
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 22px; border-radius: 25px; 
+            margin-bottom: 40px; border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+        }
+        .section-tag {
+            display: inline-block; background: var(--accent-blue); color: #000;
+            padding: 4px 12px; border-radius: 50px; font-size: 10px; font-weight: bold;
+            margin-bottom: 15px; text-transform: uppercase;
+        }
+
+        .form-title { font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 20px 0; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .input-group label { display: block; font-size: 11px; color: #ccc; margin-bottom: 5px; font-weight: bold; }
+        .input-field { 
+            width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.1); 
+            border-radius: 12px; background: rgba(0,0,0,0.4); color: white;
+            font-size: 14px; outline: none; box-sizing: border-box;
+        }
+
+        .image-upload-box {
+            margin-top: 15px; border: 2px dashed rgba(0, 210, 255, 0.3);
+            padding: 15px; border-radius: 15px; text-align: center; cursor: pointer;
+        }
+
+        .post-btn { 
+            background: linear-gradient(135deg, #00d2ff, #0088cc);
+            color: white; border: none; padding: 15px; width: 100%; 
+            border-radius: 15px; font-weight: 800; cursor: pointer; margin-top: 15px;
+            box-shadow: 0 5px 15px rgba(0, 210, 255, 0.3);
+        }
+
+        /* --- Account Card (Buyer View) --- */
+        .list-header { 
+            margin: 20px 0; border-left: 4px solid var(--price-yellow); padding-left: 15px;
+        }
+        .list-header h2 { font-size: 1.2rem; margin: 0; letter-spacing: 1px; }
+
+        .acc-card { 
+            background: var(--card-dark);
+            border-radius: 30px; overflow: hidden; 
+            margin-bottom: 30px; border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); position: relative;
+        }
+
+        .acc-header { 
+            padding: 20px; display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .price-badge { 
+            background: var(--price-yellow); color: #000; padding: 8px 18px; 
+            border-radius: 12px; font-weight: 900; font-size: 1.1rem;
+        }
+
+        .acc-body { padding: 20px; }
+        .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .info-row strong { color: #888; font-size: 13px; }
+        .info-row span { color: #fff; font-weight: 600; font-size: 14px; }
+
+        .acc-image { width: 100%; border-radius: 15px; margin-top: 15px; border: 1px solid rgba(255,255,255,0.08); }
+
+        .card-footer { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .tg-link-btn { 
+            background: var(--tg-blue); color: white; text-align: center; 
+            padding: 15px; text-decoration: none; font-weight: 800; border-radius: 15px;
+        }
+        .sold-out-btn { 
+            background: transparent; color: #444; border: 1px solid #222; 
+            padding: 8px; border-radius: 12px; cursor: pointer; font-size: 11px;
+        }
+
+        .sold-badge {
+            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);
+            background: var(--sold-red); color: white; font-size: 2.5rem; font-weight: 900; 
+            padding: 10px 40px; border: 5px solid white; z-index: 10; border-radius: 10px;
+        }
+        .acc-card.sold-out-status { opacity: 0.2; filter: grayscale(1); }
+        .acc-card.sold-out-status .sold-badge { display: block; }
+
+        #img-preview { width: 100%; border-radius: 12px; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="lightning" style="left: 20%;"></div>
+<div class="lightning" style="left: 80%; animation-delay: 1s;"></div>
+
+<div class="container">
+    <div class="brand-header">
+        <div class="brand-name">Kimo MLBB</div>
+        <div style="font-size: 0.8rem; color: var(--accent-blue); letter-spacing: 4px; margin-top: 5px;">ACCOUNT SHOP</div>
+    </div>
+
+    <div class="admin-box">
+        <span class="section-tag">For Seller / ရောင်းသူအတွက်</span>
+        <h3 class="form-title">Upload New Account / အကောင့်တင်ရန်</h3>
+        <div class="info-grid">
+            <div class="input-group"><label>Price / ဈေးနှုန်း</label><input type="number" id="price" class="input-field" placeholder="Ks"></div>
+            <div class="input-group"><label>Rank / အဆင့်</label><input type="text" id="rank" class="input-field" placeholder="Mythic"></div>
+            <div class="input-group"><label>Skins / စကင်</label><input type="number" id="skins" class="input-field" placeholder="Total"></div>
+            <div class="input-group"><label>Heroes / ဟီးရိုး</label><input type="number" id="heroes" class="input-field" placeholder="Total"></div>
+            <div class="input-group" style="grid-column: span 2;"><label>Note / အချက်အလက်</label><input type="text" id="note" class="input-field" placeholder="Email Type / Details..."></div>
+        </div>
+        <div class="image-upload-box" onclick="document.getElementById('file-input').click()">
+            <span style="color: var(--accent-blue); font-size: 12px; font-weight: bold;">📸 Add Screenshot / ဓာတ်ပုံထည့်ရန်</span>
+            <input type="file" id="file-input" accept="image/*" style="display:none" onchange="previewImage(event)">
+            <img id="img-preview" src="">
+        </div>
+        <button class="post-btn" onclick="addNewPost()">PUBLISH POST / အကောင့်တင်မည်</button>
+    </div>
+
+    <div class="list-header">
+        <span class="section-tag" style="background: var(--price-yellow);">For Buyer / ဝယ်သူအတွက်</span>
+        <h2>AVAILABLE ACCOUNTS</h2>
+    </div>
+    
+    <div id="shop-feed"></div>
+</div>
+
+<script>
+    let selectedImageData = "";
+    function previewImage(event) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            document.getElementById('img-preview').src = reader.result;
+            document.getElementById('img-preview').style.display = 'block';
+            selectedImageData = reader.result;
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    let postID = 0;
+    function addNewPost() {
+        const price = document.getElementById('price').value;
+        const rank = document.getElementById('rank').value;
+        const skins = document.getElementById('skins').value;
+        const heroes = document.getElementById('heroes').value;
+        const note = document.getElementById('note').value;
+
+        if(!price || !selectedImageData) { alert("Please fill data!"); return; }
+
+        postID++;
+        const postHTML = `
+            <div class="acc-card" id="post-${postID}">
+                <div class="sold-badge">SOLD</div>
+                <div class="acc-header">
+                    <span style="color: #666; font-size: 11px;">KIMO-ID: #${postID + 1000}</span>
+                    <span class="price-badge">${Number(price).toLocaleString()} Ks</span>
+                </div>
+                <div class="acc-body">
+                    <div class="info-row"><strong>Rank / အဆင့်</strong> <span>${rank}</span></div>
+                    <div class="info-row"><strong>Skins / စကင်</strong> <span>${skins}</span></div>
+                    <div class="info-row"><strong>Heroes / ဟီးရိုး</strong> <span>${heroes}</span></div>
+                    <div class="info-row"><strong>Note / အချက်အလက်</strong> <span>${note}</span></div>
+                    <img src="${selectedImageData}" class="acc-image">
+                </div>
+                <div class="card-footer">
+                    <a href="https://t.me/Ironman2005born" target="_blank" class="tg-link-btn">BUY / ဝယ်ယူရန်</a>
+                    <button class="sold-out-btn" onclick="toggleSold(${postID})">Seller: Mark Sold / ရောင်းပြီးသတ်မှတ်ရန်</button>
+                </div>
+            </div>
+        `;
+        document.getElementById('shop-feed').insertAdjacentHTML('afterbegin', postHTML);
+        document.querySelectorAll('.input-field').forEach(i => i.value = "");
+        document.getElementById('img-preview').style.display = 'none';
+        selectedImageData = "";
+    }
+
+    function toggleSold(id) {
+        const card = document.getElementById(`post-${id}`);
+        card.classList.toggle('sold-out-status');
+        card.querySelector('.sold-out-btn').innerText = card.classList.contains('sold-out-status') ? "Seller: Restore / ပြန်တင်မည်" : "Seller: Mark Sold / ရောင်းပြီးသတ်မှတ်ရန်";
+    }
+</script>
+
+</body>
+</html>
