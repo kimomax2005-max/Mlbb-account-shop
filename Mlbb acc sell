@@ -2,235 +2,380 @@
 <html lang="my">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kimo MLBB Acc Shop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIMO SHOP | Cloud Edition</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
     <style>
-        :root {
-            --tg-blue: #0088cc;
-            --price-yellow: #ffd700;
-            --bg-dark: #05080a;
-            --card-dark: #12161f;
-            --accent-blue: #00d2ff;
-            --sold-red: #ff3333;
+        :root { 
+            --neon-blue: #00d2ff; 
+            --neon-pink: #bc13fe; 
+            --glass: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
         }
-
+        
         body { 
-            font-family: 'Inter', 'Pyidaungsu', 'Segoe UI', sans-serif;
-            margin: 0; padding: 20px 15px; 
-            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
-            background: var(--bg-dark);
-            color: #ffffff;
-            overflow-x: hidden;
+            margin: 0; background: #050508; color: white; 
+            font-family: 'Inter', sans-serif; overflow-x: hidden;
+            background-size: cover; background-position: center; 
+            background-attachment: fixed; transition: 0.5s;
         }
 
-        /* --- Lightning Bolt Effect --- */
-        .lightning {
-            position: fixed; top: 0; width: 2px; height: 100%;
-            background: rgba(255, 255, 255, 0);
-            box-shadow: 0 0 20px 2px rgba(0, 210, 255, 0);
-            z-index: 0; pointer-events: none;
-            animation: thunder 2s infinite;
+        .bg-neon {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 15% 15%, rgba(0, 210, 255, 0.15) 0%, transparent 45%),
+                        radial-gradient(circle at 85% 85%, rgba(188, 19, 254, 0.15) 0%, transparent 45%);
+            z-index: -1;
         }
 
-        @keyframes thunder {
-            0%, 10%, 90%, 100% { background: rgba(255, 255, 255, 0); box-shadow: none; }
-            92% { background: rgba(255, 255, 255, 0.8); box-shadow: 0 0 30px 5px var(--accent-blue); transform: translateX(-20px) skewX(-10deg); }
-            96% { background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 50px 10px #fff; }
+        #loader { 
+            position: fixed; width: 100%; height: 100vh; background: #000; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; 
         }
 
-        .container { width: 100%; max-width: 440px; z-index: 2; }
+        .page { display: none; padding: 20px; animation: fadeIn 0.6s ease-out; max-width: 800px; margin: auto; }
+        .active-page { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
-        /* Branding */
-        .brand-header {
-            text-align: center; margin-bottom: 30px;
-        }
-        .brand-name {
-            font-size: 2.2rem; font-weight: 900;
-            background: linear-gradient(to bottom, #fff, var(--accent-blue));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            text-transform: uppercase; letter-spacing: 2px;
-            filter: drop-shadow(0 0 10px rgba(0, 210, 255, 0.5));
+        header { display: flex; align-items: center; justify-content: center; margin-bottom: 40px; padding-top: 20px; position: relative; }
+        .back-btn { 
+            position: absolute; left: 0; top: 20px; 
+            background: rgba(255,255,255,0.1); border: 1px solid var(--card-border);
+            color: white; padding: 8px 15px; border-radius: 12px; cursor: pointer;
         }
 
-        /* --- Admin Card (Seller View) --- */
-        .admin-box { 
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            padding: 22px; border-radius: 25px; 
-            margin-bottom: 40px; border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+        .k-logo { 
+            width: 70px; height: 70px; border-radius: 20px; overflow: hidden; 
+            border: 2px solid var(--neon-blue); box-shadow: 0 0 20px rgba(0, 210, 255, 0.5);
         }
-        .section-tag {
-            display: inline-block; background: var(--accent-blue); color: #000;
-            padding: 4px 12px; border-radius: 50px; font-size: 10px; font-weight: bold;
-            margin-bottom: 15px; text-transform: uppercase;
-        }
+        .k-logo img { width: 100%; height: 100%; object-fit: cover; }
+        .shop-title { margin-left: 20px; font-size: 28px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; font-style: italic; cursor: pointer; }
 
-        .form-title { font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 20px 0; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .input-group label { display: block; font-size: 11px; color: #ccc; margin-bottom: 5px; font-weight: bold; }
-        .input-field { 
-            width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 12px; background: rgba(0,0,0,0.4); color: white;
-            font-size: 14px; outline: none; box-sizing: border-box;
+        /* Original Slider Style */
+        .slider-wrapper {
+            padding: 8px; border-radius: 30px; border: 2px solid;
+            border-image: linear-gradient(to right, var(--neon-blue), var(--neon-pink)) 1;
+            margin-bottom: 40px; background: rgba(0,0,0,0.5);
         }
+        .slider-container { width: 100%; aspect-ratio: 16/9; border-radius: 22px; overflow: hidden; position: relative; }
+        .slides { display: flex; width: 300%; height: 100%; transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1); }
+        .slide { width: 100%; height: 100%; background-size: cover; background-position: center; display: flex; align-items: flex-end; }
+        .slide-overlay { width: 100%; padding: 25px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); font-weight: bold; }
 
-        .image-upload-box {
-            margin-top: 15px; border: 2px dashed rgba(0, 210, 255, 0.3);
-            padding: 15px; border-radius: 15px; text-align: center; cursor: pointer;
+        .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        .main-card { 
+            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); 
+            padding: 15px; border-radius: 24px; display: flex; flex-direction: column;
+            justify-content: space-between; backdrop-filter: blur(10px); 
         }
-
-        .post-btn { 
-            background: linear-gradient(135deg, #00d2ff, #0088cc);
-            color: white; border: none; padding: 15px; width: 100%; 
-            border-radius: 15px; font-weight: 800; cursor: pointer; margin-top: 15px;
-            box-shadow: 0 5px 15px rgba(0, 210, 255, 0.3);
+        
+        .buy-pill { 
+            margin-top: 15px; background: linear-gradient(90deg, #00c6ff, #0072ff); 
+            border: none; color: white; padding: 12px; border-radius: 50px; 
+            font-size: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase;
         }
 
-        /* --- Account Card (Buyer View) --- */
-        .list-header { 
-            margin: 20px 0; border-left: 4px solid var(--price-yellow); padding-left: 15px;
+        .pay-guide {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--neon-blue);
+            padding: 15px; border-radius: 20px; margin-bottom: 20px;
         }
-        .list-header h2 { font-size: 1.2rem; margin: 0; letter-spacing: 1px; }
-
-        .acc-card { 
-            background: var(--card-dark);
-            border-radius: 30px; overflow: hidden; 
-            margin-bottom: 30px; border: 1px solid rgba(255, 255, 255, 0.03);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6); position: relative;
+        .price-item { 
+            background: rgba(255,255,255,0.05); padding: 18px; border-radius: 20px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 12px; border-left: 4px solid var(--neon-blue);
         }
 
-        .acc-header { 
-            padding: 20px; display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255, 255, 255, 0.02);
-        }
+        .admin-input { width: 100%; padding: 15px; margin-bottom: 12px; background: #000; border: 1px solid #444; color: white; border-radius: 15px; box-sizing: border-box; }
 
-        .price-badge { 
-            background: var(--price-yellow); color: #000; padding: 8px 18px; 
-            border-radius: 12px; font-weight: 900; font-size: 1.1rem;
-        }
-
-        .acc-body { padding: 20px; }
-        .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        .info-row strong { color: #888; font-size: 13px; }
-        .info-row span { color: #fff; font-weight: 600; font-size: 14px; }
-
-        .acc-image { width: 100%; border-radius: 15px; margin-top: 15px; border: 1px solid rgba(255,255,255,0.08); }
-
-        .card-footer { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .tg-link-btn { 
-            background: var(--tg-blue); color: white; text-align: center; 
-            padding: 15px; text-decoration: none; font-weight: 800; border-radius: 15px;
-        }
-        .sold-out-btn { 
-            background: transparent; color: #444; border: 1px solid #222; 
-            padding: 8px; border-radius: 12px; cursor: pointer; font-size: 11px;
-        }
-
-        .sold-badge {
-            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg);
-            background: var(--sold-red); color: white; font-size: 2.5rem; font-weight: 900; 
-            padding: 10px 40px; border: 5px solid white; z-index: 10; border-radius: 10px;
-        }
-        .acc-card.sold-out-status { opacity: 0.2; filter: grayscale(1); }
-        .acc-card.sold-out-status .sold-badge { display: block; }
-
-        #img-preview { width: 100%; border-radius: 12px; margin-top: 10px; display: none; }
+        /* Acc Shop & Modal */
+        .acc-post { background: var(--glass); border-radius: 28px; padding: 18px; border: 1px solid var(--card-border); margin-bottom: 25px; position: relative; }
+        .preview-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 20px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050508; z-index: 2000; overflow-y: auto; padding: 20px; }
+        .detail-wrapper { max-width: 600px; margin: auto; display: flex; flex-direction: column; align-items: center; }
+        .detail-img { width: 100%; max-width: 500px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #333; }
+        
+        .adm-tab { background: #111; padding: 10px 20px; border-radius: 12px; cursor: pointer; margin-right: 10px; display: inline-block; }
+        .adm-tab.active { background: var(--neon-blue); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
-
-<div class="lightning" style="left: 20%;"></div>
-<div class="lightning" style="left: 80%; animation-delay: 1s;"></div>
-
-<div class="container">
-    <div class="brand-header">
-        <div class="brand-name">Kimo MLBB</div>
-        <div style="font-size: 0.8rem; color: var(--accent-blue); letter-spacing: 4px; margin-top: 5px;">ACCOUNT SHOP</div>
+    <div class="bg-neon"></div>
+    <div id="loader">
+        <h2 style="color:var(--neon-blue);">KIMO SHOP</h2>
+        <p>Syncing Cloud Data...</p>
     </div>
 
-    <div class="admin-box">
-        <span class="section-tag">For Seller / ရောင်းသူအတွက်</span>
-        <h3 class="form-title">Upload New Account / အကောင့်တင်ရန်</h3>
-        <div class="info-grid">
-            <div class="input-group"><label>Price / ဈေးနှုန်း</label><input type="number" id="price" class="input-field" placeholder="Ks"></div>
-            <div class="input-group"><label>Rank / အဆင့်</label><input type="text" id="rank" class="input-field" placeholder="Mythic"></div>
-            <div class="input-group"><label>Skins / စကင်</label><input type="number" id="skins" class="input-field" placeholder="Total"></div>
-            <div class="input-group"><label>Heroes / ဟီးရိုး</label><input type="number" id="heroes" class="input-field" placeholder="Total"></div>
-            <div class="input-group" style="grid-column: span 2;"><label>Note / အချက်အလက်</label><input type="text" id="note" class="input-field" placeholder="Email Type / Details..."></div>
-        </div>
-        <div class="image-upload-box" onclick="document.getElementById('file-input').click()">
-            <span style="color: var(--accent-blue); font-size: 12px; font-weight: bold;">📸 Add Screenshot / ဓာတ်ပုံထည့်ရန်</span>
-            <input type="file" id="file-input" accept="image/*" style="display:none" onchange="previewImage(event)">
-            <img id="img-preview" src="">
-        </div>
-        <button class="post-btn" onclick="addNewPost()">PUBLISH POST / အကောင့်တင်မည်</button>
-    </div>
-
-    <div class="list-header">
-        <span class="section-tag" style="background: var(--price-yellow);">For Buyer / ဝယ်သူအတွက်</span>
-        <h2>AVAILABLE ACCOUNTS</h2>
-    </div>
-    
-    <div id="shop-feed"></div>
-</div>
-
-<script>
-    let selectedImageData = "";
-    function previewImage(event) {
-        const reader = new FileReader();
-        reader.onload = function() {
-            document.getElementById('img-preview').src = reader.result;
-            document.getElementById('img-preview').style.display = 'block';
-            selectedImageData = reader.result;
-        };
-        reader.readAsDataURL(event.target.files[0]);
-    }
-
-    let postID = 0;
-    function addNewPost() {
-        const price = document.getElementById('price').value;
-        const rank = document.getElementById('rank').value;
-        const skins = document.getElementById('skins').value;
-        const heroes = document.getElementById('heroes').value;
-        const note = document.getElementById('note').value;
-
-        if(!price || !selectedImageData) { alert("Please fill data!"); return; }
-
-        postID++;
-        const postHTML = `
-            <div class="acc-card" id="post-${postID}">
-                <div class="sold-badge">SOLD</div>
-                <div class="acc-header">
-                    <span style="color: #666; font-size: 11px;">KIMO-ID: #${postID + 1000}</span>
-                    <span class="price-badge">${Number(price).toLocaleString()} Ks</span>
-                </div>
-                <div class="acc-body">
-                    <div class="info-row"><strong>Rank / အဆင့်</strong> <span>${rank}</span></div>
-                    <div class="info-row"><strong>Skins / စကင်</strong> <span>${skins}</span></div>
-                    <div class="info-row"><strong>Heroes / ဟီးရိုး</strong> <span>${heroes}</span></div>
-                    <div class="info-row"><strong>Note / အချက်အလက်</strong> <span>${note}</span></div>
-                    <img src="${selectedImageData}" class="acc-image">
-                </div>
-                <div class="card-footer">
-                    <a href="https://t.me/Ironman2005born" target="_blank" class="tg-link-btn">BUY / ဝယ်ယူရန်</a>
-                    <button class="sold-out-btn" onclick="toggleSold(${postID})">Seller: Mark Sold / ရောင်းပြီးသတ်မှတ်ရန်</button>
+    <div id="main-page" class="page active-page">
+        <header>
+            <div class="k-logo"><img id="display-logo" src=""></div>
+            <div class="shop-title" onclick="secretAdmin()">KIMO SHOP</div>
+        </header>
+        
+        <div class="slider-wrapper">
+            <div class="slider-container">
+                <div class="slides" id="slide-track">
+                    <div id="slide0" class="slide"><div class="slide-overlay" id="st0"></div></div>
+                    <div id="slide1" class="slide"><div class="slide-overlay" id="st1"></div></div>
+                    <div id="slide2" class="slide"><div class="slide-overlay" id="st2"></div></div>
                 </div>
             </div>
-        `;
-        document.getElementById('shop-feed').insertAdjacentHTML('afterbegin', postHTML);
-        document.querySelectorAll('.input-field').forEach(i => i.value = "");
-        document.getElementById('img-preview').style.display = 'none';
-        selectedImageData = "";
-    }
+        </div>
 
-    function toggleSold(id) {
-        const card = document.getElementById(`post-${id}`);
-        card.classList.toggle('sold-out-status');
-        card.querySelector('.sold-out-btn').innerText = card.classList.contains('sold-out-status') ? "Seller: Restore / ပြန်တင်မည်" : "Seller: Mark Sold / ရောင်းပြီးသတ်မှတ်ရန်";
-    }
-</script>
+        <div class="grid-layout">
+            <div class="main-card" onclick="nav('mlbb-page')"><h3>MLBB</h3><button class="buy-pill">BUY NOW</button></div>
+            <div class="main-card" onclick="nav('heartopia-page')"><h3>HEARTOPIA</h3><button class="buy-pill" style="background:linear-gradient(90deg,#bc13fe,#7a00ff)">BUY NOW</button></div>
+            <div class="main-card" onclick="nav('pubg-page')"><h3>PUBG</h3><button class="buy-pill">BUY NOW</button></div>
+            <div class="main-card" onclick="nav('tg-page')"><h3>TELEGRAM</h3><button class="buy-pill" style="background:linear-gradient(90deg,#bc13fe,#7a00ff)">BUY NOW</button></div>
+        </div>
 
+        <div class="main-card" style="flex-direction:row; align-items:center; margin-bottom:40px;" onclick="nav('acc-page')">
+            <div><h3>Accounts Shop</h3><p style="font-size:12px; color:#aaa;">Premium Stocks</p></div>
+            <button class="buy-pill" style="margin-top:0; padding:10px 20px; margin-left:auto;">VIEW ALL</button>
+        </div>
+    </div>
+
+    <div id="mlbb-page" class="page">
+        <header><button class="back-btn" onclick="nav('main-page')">← BACK</button><div class="shop-title">MLBB</div></header>
+        <div id="mlbb-pay-box"></div>
+        <div class="order-input-box">
+            <input type="text" id="mlbb-id" class="admin-input" placeholder="Player ID">
+            <input type="text" id="mlbb-sr" class="admin-input" placeholder="Server ID">
+            <input type="number" id="mlbb-pay5" class="admin-input" placeholder="ငွေလွဲနောက်ဆုံး ၅ လုံး">
+        </div>
+        <div id="list-mlbb"></div>
+    </div>
+
+    <div id="pubg-page" class="page">
+        <header><button class="back-btn" onclick="nav('main-page')">← BACK</button><div class="shop-title">PUBG</div></header>
+        <div id="pubg-pay-box"></div>
+        <div class="order-input-box">
+            <input type="text" id="pubg-id" class="admin-input" placeholder="Character ID">
+            <input type="number" id="pubg-pay5" class="admin-input" placeholder="ငွေလွဲနောက်ဆုံး ၅ လုံး">
+        </div>
+        <div id="list-pubg"></div>
+    </div>
+
+    <div id="acc-page" class="page">
+        <header><button class="back-btn" onclick="nav('main-page')">← BACK</button><div class="shop-title">ACCOUNTS</div></header>
+        <div id="list-acc"></div>
+    </div>
+
+    <div id="admin-page" class="page">
+        <header><div class="shop-title">ADMIN CLOUD</div></header>
+        <div style="margin-bottom:20px;">
+            <div class="adm-tab active" onclick="switchAdm('prices')">Prices</div>
+            <div class="adm-tab" onclick="switchAdm('visuals')">Visuals/Pay</div>
+            <div class="adm-tab" onclick="switchAdm('accs')">Post Acc</div>
+        </div>
+
+        <div id="adm-prices">
+            <select id="cat-select" class="admin-input" onchange="currCat=this.value; renderPriceEdit()">
+                <option value="mlbb">MLBB</option>
+                <option value="pubg">PUBG</option>
+                <option value="heartopia">HEARTOPIA</option>
+                <option value="tg">TELEGRAM</option>
+            </select>
+            <div id="price-edit-area"></div>
+            <button class="buy-pill" onclick="addItem()">+ Add Item</button>
+        </div>
+
+        <div id="adm-visuals" style="display:none">
+            <input type="text" id="adm-p1m" class="admin-input" placeholder="Payment 1 Name (e.g. KPay)">
+            <input type="text" id="adm-p1n" class="admin-input" placeholder="Payment 1 Number">
+            <input type="text" id="adm-p2m" class="admin-input" placeholder="Payment 2 Name (e.g. Wave)">
+            <input type="text" id="adm-p2n" class="admin-input" placeholder="Payment 2 Number">
+            <input type="text" id="adm-tg" class="admin-input" placeholder="Admin TG Username (without @)">
+            <p style="font-size:12px;">Logo/Slide များအတွက် Link ကိုသာ ထည့်ပေးပါ။</p>
+            <input type="text" id="adm-logo" class="admin-input" placeholder="Logo Image URL">
+            <input type="text" id="adm-bg" class="admin-input" placeholder="Background Image URL">
+        </div>
+
+        <div id="adm-accs" style="display:none">
+            <input type="text" id="acc-t" class="admin-input" placeholder="Account Name">
+            <textarea id="acc-d" class="admin-input" style="height:100px" placeholder="Details"></textarea>
+            <input type="text" id="acc-imgs" class="admin-input" placeholder="Image URLs (comma separated)">
+            <button class="buy-pill" style="width:100%" onclick="postAcc()">Publish Account</button>
+        </div>
+
+        <button class="buy-pill" style="width:100%; background:green; margin-top:30px;" onclick="uploadToCloud()">SAVE ALL TO CLOUD</button>
+        <button class="buy-pill" style="width:100%; background:#333;" onclick="nav('main-page')">EXIT ADMIN</button>
+    </div>
+
+    <div id="detail-modal" class="modal">
+        <div id="detail-content" class="detail-wrapper"></div>
+        <button class="buy-pill" style="width:100%; max-width:600px; display:block; margin:20px auto; background:#333;" onclick="closeModal()">CLOSE</button>
+    </div>
+
+    <script>
+        // FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyBdMz4xg9QR7hNEp8e7AV_zWW21gwm50kM",
+            authDomain: "kimo-shop-89951.firebaseapp.com",
+            databaseURL: "https://kimo-shop-89951-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "kimo-shop-89951",
+            storageBucket: "kimo-shop-89951.firebasestorage.app",
+            messagingSenderId: "802336427242",
+            appId: "1:802336427242:web:df6c687fa93fb5c4ce1b93"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database().ref('kimo_v10_data');
+
+        let kimoData = {
+            mlbb: [], pubg: [], heartopia: [], tg: [], accs: [],
+            pay1m: 'KPay', pay1n: '', pay2m: 'Wave', pay2n: '',
+            tgUser: 'admin', logo: '', bg: ''
+        };
+
+        let currCat = 'mlbb';
+        let secretCount = 0;
+
+        // Sync Data from Firebase (Live Updates)
+        db.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                kimoData = data;
+                renderApp();
+            }
+            document.getElementById('loader').style.display = 'none';
+        });
+
+        function renderApp() {
+            // Update Visuals
+            if(kimoData.logo) document.getElementById('display-logo').src = kimoData.logo;
+            if(kimoData.bg) document.body.style.backgroundImage = `url('${kimoData.bg}')`;
+
+            // Render Prices
+            ['mlbb', 'pubg', 'heartopia', 'tg'].forEach(cat => {
+                const list = document.getElementById('list-' + cat);
+                if(list) {
+                    list.innerHTML = (kimoData[cat] || []).map(item => `
+                        <div class="price-item">
+                            <span>${item.name}</span>
+                            <button class="buy-pill" style="margin:0" onclick="sendOrder('${cat.toUpperCase()}', '${item.name}', '${item.price}')">${item.price} MMK</button>
+                        </div>
+                    `).join('');
+                }
+
+                const payBox = document.getElementById(cat + '-pay-box');
+                if(payBox) {
+                    payBox.innerHTML = `
+                        <div class="pay-guide">
+                            <h4>💳 Payment Accounts</h4>
+                            <p>${kimoData.pay1m}: <b>${kimoData.pay1n}</b></p>
+                            <p>${kimoData.pay2m}: <b>${kimoData.pay2n}</b></p>
+                        </div>`;
+                }
+            });
+
+            // Render Acc Shop
+            document.getElementById('list-acc').innerHTML = (kimoData.accs || []).map(a => `
+                <div class="acc-post" onclick="viewDetails('${a.id}')">
+                    <img src="${a.imgs[0]}" class="preview-img">
+                    <div style="padding:10px;"><h3>${a.title}</h3><p style="color:var(--neon-blue)">View Details</p></div>
+                </div>
+            `).join('');
+        }
+
+        function sendOrder(cat, item, price) {
+            const prefix = cat.toLowerCase();
+            const id = document.getElementById(prefix + '-id')?.value || 'N/A';
+            const pay5 = document.getElementById(prefix + '-pay5')?.value || 'N/A';
+            if(id === 'N/A' || pay5 === 'N/A') return alert("ID နှင့် ငွေလွဲနောက်ဆုံး ၅ လုံး ဖြည့်ပါ။");
+
+            const text = `🛒 **NEW ORDER**\n\n🔹 Game: ${cat}\n🔹 Item: ${item}\n🔹 Price: ${price} MMK\n🔹 ID: ${id}\n🔹 Last 5 Digits: ${pay5}`;
+            window.open(`https://t.me/${kimoData.tgUser}?text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        function viewDetails(id) {
+            const a = kimoData.accs.find(x => x.id == id);
+            document.getElementById('detail-content').innerHTML = `
+                <h2 style="color:var(--neon-blue)">${a.title}</h2>
+                <p style="white-space:pre-wrap; background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; width:100%;">${a.details}</p>
+                ${a.imgs.map(img => `<img src="${img}" class="detail-img">`).join('')}
+                <button class="buy-pill" style="width:100%; height:50px;" onclick="window.open('https://t.me/${kimoData.tgUser}')">BUY NOW VIA TELEGRAM</button>
+            `;
+            document.getElementById('detail-modal').style.display = 'block';
+        }
+
+        function closeModal() { document.getElementById('detail-modal').style.display = 'none'; }
+
+        // Admin Functions
+        function secretAdmin() {
+            secretCount++;
+            if(secretCount >= 5) {
+                secretCount = 0;
+                nav('admin-page');
+                loadAdminFields();
+            }
+            setTimeout(() => secretCount = 0, 2000);
+        }
+
+        function loadAdminFields() {
+            document.getElementById('adm-p1m').value = kimoData.pay1m;
+            document.getElementById('adm-p1n').value = kimoData.pay1n;
+            document.getElementById('adm-p2m').value = kimoData.pay2m;
+            document.getElementById('adm-p2n').value = kimoData.pay2n;
+            document.getElementById('adm-tg').value = kimoData.tgUser;
+            document.getElementById('adm-logo').value = kimoData.logo;
+            document.getElementById('adm-bg').value = kimoData.bg;
+            renderPriceEdit();
+        }
+
+        function renderPriceEdit() {
+            const area = document.getElementById('price-edit-area');
+            area.innerHTML = (kimoData[currCat] || []).map((item, i) => `
+                <div style="display:flex; gap:5px; margin-bottom:5px;">
+                    <input class="admin-input" value="${item.name}" onchange="kimoData['${currCat}'][${i}].name=this.value">
+                    <input class="admin-input" value="${item.price}" onchange="kimoData['${currCat}'][${i}].price=this.value">
+                    <button onclick="kimoData['${currCat}'].splice(${i},1); renderPriceEdit()" style="background:red; color:white; border:none; border-radius:10px; width:40px;">X</button>
+                </div>
+            `).join('');
+        }
+
+        function addItem() {
+            if(!kimoData[currCat]) kimoData[currCat] = [];
+            kimoData[currCat].push({name: 'New Item', price: '0'});
+            renderPriceEdit();
+        }
+
+        function postAcc() {
+            const title = document.getElementById('acc-t').value;
+            const details = document.getElementById('acc-d').value;
+            const imgs = document.getElementById('acc-imgs').value.split(',');
+            if(!kimoData.accs) kimoData.accs = [];
+            kimoData.accs.unshift({ id: Date.now(), title, details, imgs });
+            alert("Account Added! Click Save to Cloud.");
+        }
+
+        function uploadToCloud() {
+            kimoData.pay1m = document.getElementById('adm-p1m').value;
+            kimoData.pay1n = document.getElementById('adm-p1n').value;
+            kimoData.pay2m = document.getElementById('adm-p2m').value;
+            kimoData.pay2n = document.getElementById('adm-p2n').value;
+            kimoData.tgUser = document.getElementById('adm-tg').value;
+            kimoData.logo = document.getElementById('adm-logo').value;
+            kimoData.bg = document.getElementById('adm-bg').value;
+
+            db.set(kimoData).then(() => alert("All Data Synced to Cloud!"));
+        }
+
+        function switchAdm(sec) {
+            document.getElementById('adm-prices').style.display = sec === 'prices' ? 'block' : 'none';
+            document.getElementById('adm-visuals').style.display = sec === 'visuals' ? 'block' : 'none';
+            document.getElementById('adm-accs').style.display = sec === 'accs' ? 'block' : 'none';
+            document.querySelectorAll('.adm-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function nav(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.getElementById(id).classList.add('active-page');
+            window.scrollTo(0,0);
+        }
+
+    </script>
 </body>
 </html>
-
